@@ -1,12 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { GoogleAuthProvider, getAuth, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 
 const Nav = () => {
+    const initialUserData = localStorage.getItem("userData") ? JSON.parse(localStorage.getItem("userData")) : {};
+    
     const [show, setShow] = useState(false);
     const [searchValue, setSearchValue] = useState("");
-    const { pathName } = useLocation();
+    const [userData, setUserData] = useState(initialUserData);
+    const { pathname } = useLocation();
+
     const navigate = useNavigate();
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+
+    useEffect(() => {
+        onAuthStateChanged(auth, (user) => {
+            console.log("user=", user);
+            if (user) {
+                if (pathname === "/") {
+                    navigate("/main");
+                }
+            } else {
+                navigate("/");
+            }
+        });
+    }, [auth, navigate, pathname]);
 
     const listener = () => {
         if (window.scrollY > 50) {
@@ -28,29 +48,59 @@ const Nav = () => {
         }
     }, []);
 
+    const handleAuth = () => {
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                setUserData(result.user);
+                localStorage.setItem("userData", JSON.stringify(result.user));
+            })
+            .catch((error) => {
+                alert(error.message);
+            });
+    }
+
+    const handleSignOut = () => {
+        signOut(auth)
+        .then(() => {
+            setUserData({});
+            navigate("/");
+        })
+        .catch((error) => {
+            alert(error.message);
+        });
+    }
+
     return (
-      <NavWrapper $show={show}>
-        <Logo>
-            <img 
-            alt="Disney Plus Logo"
-            src="/images/logo.svg"
-            onClick={() => (window.location.href = "/")}
-            />
-        </Logo>
+        <NavWrapper $show={show}>
+            <Logo>
+                <img
+                    alt="Disney Plus Logo"
+                    src="/images/logo.svg"
+                    onClick={() => (window.location.href = "/")}
+                />
+            </Logo>
 
-        {pathName === "/" ? (
-            <Login>Login</Login>
-        ) : (
-            <Input
-            value={searchValue}
-            onChange={handleChange}
-            className="nav__input"
-            placeholder="Search"
-            type="text"
-            />
-        )}
+            {pathname === "/" ? (
+                <Login onClick={handleAuth}>Login</Login>
+            ) : (
+                <>
+                    <Input
+                        value={searchValue}
+                        onChange={handleChange}
+                        className="nav__input"
+                        placeholder="Search"
+                        type="text"
+                    />
 
-      </NavWrapper>
+                    <SignOut>
+                        <UserImg src={userData?.photoURL} alt={userData?.displayName} />
+                        <DropDown>
+                            <span onClick={handleSignOut}>Sign out</span>
+                        </DropDown>
+                    </SignOut>
+                </>
+            )}
+        </NavWrapper>
     );
 };
 
@@ -109,5 +159,43 @@ const Login = styled.a`
         background-color: #f9f9f9;
         color: #000;
         border-color: transparent;
+    }
+`
+
+const UserImg = styled.img`
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+`;
+
+const DropDown = styled.div`
+    position: absolute;
+    top: 48px;
+    right: 0px;
+    background: rgb(19, 19, 19);
+    border: 1px solid rgba(151, 151, 151, 0.34);
+    border-radius: 4px;
+    box-shadow: rgb(0 0 0 / 50%) 0px 0px 18px 0px;
+    padding: 10px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    width: 100px;
+    opacity: 0;
+`
+
+const SignOut = styled.div`
+    position: relative;
+    height: 48px;
+    width: 48px;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        ${DropDown} {
+            opacity: 1;
+            transition-duration: 1s;
+        }
     }
 `
