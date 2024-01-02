@@ -105,16 +105,16 @@
     .row__poster {
         max-height: 160px;
     }
-    .row__posterLarge {
+    /* .row__posterLarge {
         max-height: 360px;
-    }
+    } */
 }
 
 @media screen and (max-width: 768px) {
     .row__poster {
         max-height: 100px;
     }
-    .row__posterLarge {
+    /* .row__posterLarge {
         max-height: 280px;
-    }
+    } */
 }
